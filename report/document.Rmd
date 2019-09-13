@@ -1,0 +1,197 @@
+---
+title: Using Neural Networks for Fake news identification
+author: Sam Nolan s3723315, Hai Dong (Supervisor)
+output: pdf_document
+references:
+- id: almag2019
+  title: Trust Based on Fake Social Media Information Detection
+  author:
+  - family: Almaghrabi
+    given: Hamad
+  publisher: Royal Melbourne Institute of Technology
+  type: article-journal
+  issued:
+    year: 2019
+    month: 7
+- id: kaplan2010
+  title: Users of the world, unite! The challenges and opportunities of social media
+  author:
+  - family: Kaplan
+    given: A. M.
+  - family: Haenlein
+    given: M.
+  publisher: Business, horizons
+  volume: 53
+  type: article-journal
+  issued:
+    year: 2010
+- id: fakenewsnet
+  title: FakeNewsNet
+  type: website
+  URL: https://github.com/KaiDMML/FakeNewsNet
+
+---
+
+```{r include = FALSE}
+library(tidyverse)
+library(knitr)
+knitr::opts_chunk$set(message=FALSE)
+```
+
+## Introduction
+This project aims to look into ways computers and particularly machine learning
+can be used to classify and prevent fake news from spreading. It is based off
+prior research from Hamad Almaghrabi's Master's thesis "Trust Based on Fake
+Social Media Information Detection"[-@almag2019] conducted under the supervision of Hai
+Dong. The aim of this thesis was to identify a minimum set of features required
+for determining what news is fake for any particular machine learning model.
+
+This independant research project works as an extension to this thesis by
+looking into more advanced machine learning techniques, in particular the use of
+neural networks (Feed Forward, Recurrent Neural Networks, Convolutional Neural
+networks, Deep Ensemble networks etc, with different depth, optimization functions, loss, archictectures etc) for better classification of fake news in comparison to the methods
+already tested as part of the above thesis (Logistic regression, Support Vector Machine, Naive Bayes
+Classifier), in the aim that a smaller subset of features will be required with
+more advanced machine learning models.
+
+## Significance
+News provided by social media is often not of the same quality of news provided
+by traditional news outlet. Fake news are produced for various political,
+financial and entertainment reasons [@kaplan2010]. This project is important due to the
+identification of whether machine learning models can be used to reliably
+classify fake news. If it turns out to be a reliable method of classification,
+it could be used to help flag other categories such as offensive, homophobic,
+or otherwise unwelcome news and information in the public. Hai Dong is
+looking to increase the users trust in social networks by way of removing
+information that is not trustworthy.
+
+In this highly connected digital age, it is important
+Particularly, in the way of the 2016 election of Donald Trump, there is
+increasing concern that fake news could be threatening democracy. This
+research if successful would allow particularly unreliable news to be flagged
+and/or removed or restricted from spreading on a social network, and therefore
+increase the trustworthiness of information recieved by the public, and
+preserving trust in our democracy in a digital age.
+
+## Methodolgy
+This is an independant research project assisting my mentor in this field. As of
+such, the methodology and student activities are the same.
+
+This process involves first collecting a large enough data set to do tests on.
+I used a dataset of 12,222 tweets used within Hamad Almaghrabi's research. This
+is a labelled dataset from FakeNewsNet[@fakenewsnet], a github repository containing fake and
+real news for the purpose of research.
+
+In the data preperation stage, I made two different datasets, one of which
+contained nothing but the text and the other stripped of the text. I used the
+former for RNN and the CNN testing due to the fact that those networks are good
+for data that have a spacial context, and the latter for a simple feed forward
+network which works best for independent numeric attributes. I learnt R and
+the tidyverse packages for the data preperation.
+
+All networks were built and executed within Tensorflow using keras.
+
+For the textual data, a subword encoder was trained on the textual data
+provided, with a target of $2^{15}$ subwords, the data was then padded to ensure
+they were all of the same length as inputs to the neural network.
+
+70% of the dataset was used for training and the remaining 30% for testing, so a direct comparison can be made with the master's thesis.
+
+Instead of a simple accuracy measurement being recorded, a more holistic approach will be used through the utilisation of a confusion matrix, measuring the accuracy, precision, recall, and F1 score of results.
+
+## Description of students activities
+Below is a description of the progress so far on the project. I have been attending
+fortnightly meetings in regards to progress on this and hearing progress from
+other PhD students.
+
+### Feed forward networks
+
+For all tests, the following Tensorflow parameters were used
+
+```{python, eval=FALSE}
+model.compile(optimizer='adam',
+  loss='binary_crossentropy',
+  metrics=['accuracy', 'Precision', 'Recall']
+)
+```
+
+The first test that was run was a simple feed forward network over 40 epochs
+with the following paramaters.
+
+Tweet attributes:
+\begin{itemize}
+\item User followers count
+\item User friends count
+\item User listed count
+\item User favourites count
+\item User account age
+\item User statuses count
+\item Tweet favourites count
+\item Tweet retweet count
+\item Tweet hashtag count
+\item Tweet url count
+\item Tweet mentions count
+\item Tweet symbols count
+\item User verified
+\item User has default profile image
+\item user has URL
+\item Tweet is quote status
+\item Tweet truncated
+\item Tweet has hastag
+\item Tweet has URL
+\item Tweet contains Wh workds
+\item Tweet contains ...
+\end{itemize}
+
+All numeric properties were normalised between 0 and 1 by dividing by the maximum
+element.
+
+The model was the following
+
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Dense(512, activation=tf.nn.relu),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+
+### RNN
+The second test was the use of a recurrent neural network on the text of the tweet alone. I used a subword encoder padded at 256 items per tweet.
+
+The following model was used
+
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Embedding(2**15,16),
+  tf.keras.layers.GlobalAveragePooling1D(),
+  tf.keras.layers.Dense(16, activation=tf.nn.relu),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+
+### CNN
+The third test used the same encoder as the neural network and same input size.
+The model used was as below
+
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Embedding(2**15,16,input_length=256),
+  tf.keras.layers.Conv1D(32, kernel_size=5,activation=tf.nn.relu),
+  tf.keras.layers.GlobalMaxPooling1D(),
+  tf.keras.layers.Dense(16, activation=tf.nn.relu),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+
+## Results
+A summary of results are below
+```{r, results = 'asis'}
+dt <- read_csv("results.csv")
+final <- dt %>% 
+  group_by(test) %>%
+  summarize(accuracy=mean(accuracy), recall=mean(recall),precision=mean(precision),F1=mean(F1))
+kable(final, caption="Final results summary")
+```
+
+The results for the RNN and the CNN were unreasonably effective. As of such more
+research will be done as to why this is the case.
