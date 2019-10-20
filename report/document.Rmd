@@ -27,14 +27,58 @@ references:
     year: 2010
 - id: fakenewsnet
   title: FakeNewsNet
-  type: website
   URL: https://github.com/KaiDMML/FakeNewsNet
+- id: daniel2019
+  title: An insight on sentiment analysis research from text using deep learning models
+  author:
+    - family: Christy Daniel
+      given: D.
+    - family: Shyamala
+      given: L.
+  publisher: Interactive Journal of Innovative Technology and Exploring Engineering
+  volume: 8
+  type: article-journal
+  issued:
+    year: 2019
+- id: kwon2013
+  title: Prominent Features of Rumor Propagation in Online Social Media
+  author:
+    - given: Jwon
+      family: Sejeong
+    - given: Cha
+      family: Meeyoung
+    - given: Jung
+      family: Kyomin
+    - given: Chen
+      family: Wei
+    - given: Wang
+      family: Yajun
+  publisher: IEEE 13th International Conference on Data Mining
+  issued:
+    year: 2013
+  type: article-journal
+- id: dong2013
+  title: "Twitter sentimint mining: A multi domain analysis"
+  author:
+    - given: Saeideh
+      family: Shahheidari
+    - family: Dong
+      given: Hai
+    - given: Md Nor Ridzuan Bin
+      family: Daud
+  publisher: 2013 Seventh International Conference on Complex, Intelligent, and Software Intensive Systems
+  issued:
+    year: 2013
+  type: article-journal
 
 ---
 
 ```{r include = FALSE}
 library(tidyverse)
 library(knitr)
+library(scales)
+library(ggcorrplot)
+library(corrr)
 knitr::opts_chunk$set(message=FALSE)
 ```
 
@@ -42,7 +86,7 @@ knitr::opts_chunk$set(message=FALSE)
 This project aims to look into ways computers and particularly machine learning
 can be used to classify and prevent fake news from spreading. It is based off
 prior research from Hamad Almaghrabi's Master's thesis "Trust Based on Fake
-Social Media Information Detection"[-@almag2019] conducted under the supervision of Hai
+Social Media Information Detection"[@almag2019] conducted under the supervision of Hai
 Dong. The aim of this thesis was to identify a minimum set of features required
 for determining what news is fake for any particular machine learning model.
 
@@ -52,22 +96,20 @@ neural networks (Feed Forward, Recurrent Neural Networks, Convolutional Neural
 networks, Deep Ensemble networks etc, with different depth, optimization functions, loss, archictectures etc) for better classification of fake news in comparison to the methods
 already tested as part of the above thesis (Logistic regression, Support Vector Machine, Naive Bayes
 Classifier), in the aim that a smaller subset of features will be required with
-more advanced machine learning models.
+more advanced machine learning models. Using Neural Networks has already been used successsfully in other classification problems such as sentimint analysis [@daniel2019].
 
 ## Significance
 News provided by social media is often not of the same quality of news provided
 by traditional news outlet. Fake news are produced for various political,
-financial and entertainment reasons [@kaplan2010]. This project is important due to the
-identification of whether machine learning models can be used to reliably
-classify fake news. If it turns out to be a reliable method of classification,
-it could be used to help flag other categories such as offensive, homophobic,
-or otherwise unwelcome news and information in the public. Hai Dong is
-looking to increase the users trust in social networks by way of removing
-information that is not trustworthy.
+financial and entertainment reasons [@kaplan2010]. In this highly connected world, it is important that fake information propogated through neural networks is reliable, as otherwise it can have larger consequences.
 
-In this highly connected digital age, it is important
+To take an example in 2013, international stock market suffered after a fake tweet stating that there was an explosion it the White House and Barack Obama was injured. [@kwon2013]. Establishing trust in our social platforms is very important. One way of doing this is to find unreliable information and flag, remove such information from a social network. Hai Dong is
+looking to increase the users trust in social networks by way of removing
+information that is not trustworthy, and has looked into methods of using machine
+learning models to classify tweets[@dong2013]
+
 Particularly, in the way of the 2016 election of Donald Trump, there is
-increasing concern that fake news could be threatening democracy. This
+increasing concern that fake news for political purposes could be impacting democracy. This
 research if successful would allow particularly unreliable news to be flagged
 and/or removed or restricted from spreading on a social network, and therefore
 increase the trustworthiness of information recieved by the public, and
@@ -84,12 +126,12 @@ real news for the purpose of research.
 
 In the data preperation stage, I made two different datasets, one of which
 contained nothing but the text and the other stripped of the text. I used the
-former for RNN and the CNN testing due to the fact that those networks are good
+former for RNN and the CNN[@daniel2019] testing due to the fact that those networks are good
 for data that have a spacial context, and the latter for a simple feed forward
 network which works best for independent numeric attributes. I learnt R and
 the tidyverse packages for the data preperation.
 
-All networks were built and executed within Tensorflow using keras.
+All networks were built and executed within popular python Artificial Intelligence library Tensorflow using keras.
 
 For the textual data, a subword encoder was trained on the textual data
 provided, with a target of $2^{15}$ subwords, the data was then padded to ensure
@@ -104,9 +146,11 @@ Below is a description of the progress so far on the project. I have been attend
 fortnightly meetings in regards to progress on this and hearing progress from
 other PhD students.
 
+Full source code for these tests can be found on github at https://github.com/Hazelfire/FakeNewsAnalysis
+
 ### Feed forward networks
 
-For all tests, the following Tensorflow parameters were used
+For all tests, the following Tensorflow parameters were used.
 
 ```{python, eval=FALSE}
 model.compile(optimizer='adam',
@@ -116,7 +160,7 @@ model.compile(optimizer='adam',
 ```
 
 The first test that was run was a simple feed forward network over 40 epochs
-with the following paramaters.
+with the following paramaters. Based off [@almag2019]
 
 Tweet attributes:
 \begin{itemize}
@@ -146,7 +190,7 @@ Tweet attributes:
 All numeric properties were normalised between 0 and 1 by dividing by the maximum
 element.
 
-The model was the following
+The model was a very simplistic feed forward shallow network:
 
 ```{python, eval=FALSE}
 model = tf.keras.models.Sequential([
@@ -155,19 +199,44 @@ model = tf.keras.models.Sequential([
 ])
 ```
 
+### Results
+```{r, results='asis', echo=FALSE}
+results <- read_csv("results.csv")
+results$accuracy = percent(results$accuracy)
+results$precision = percent(results$precision)
+results$recall = percent(results$recall)
+results$F1 = percent(results$F1)
+results$trainpercent = percent(results$trainpercent)
+ffnresults <- results %>% filter(test=="feedforward") %>% arrange(trainpercent)
+kable(ffnresults, caption="Results from tests run on the feed forward network")
+```
+
+This found a mild success. Showing between `r ffnresults$accuracy[1]` accuracy training when training on `r ffnresults$trainpercent[1]` of the dataset and `r tail(ffnresults$accuracy, n=1)` when training on `r tail(ffnresults$trainpercent, n=1)` of the data. This was not an improvement over 82% accuracy found in [@almag2019] for Support Vector Machines and Logistic Regression, so more sophisticated networks were tested.
+
 ### RNN
-The second test was the use of a recurrent neural network on the text of the tweet alone. I used a subword encoder padded at 256 items per tweet.
+The second test was the use of a recurrent neural network on the text of the tweet alone. I used a subword encoder padded at 256 subwords per tweet. The text encoder has a vocabulary of 32768. The encoder can be found on github.
 
 The following model was used
 
 ```{python, eval=FALSE}
 model = tf.keras.models.Sequential([
   tf.keras.layers.Embedding(2**15,16),
-  tf.keras.layers.GlobalAveragePooling1D(),
+  tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(16)),
   tf.keras.layers.Dense(16, activation=tf.nn.relu),
   tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
 ])
 ```
+
+### Results
+Use of an RNN was a major success.
+```{r, echo=FALSE, results='asis'}
+rnnresults <- results %>% filter(test=="rnn") %>% arrange(trainpercent)
+kable(rnnresults, caption="Results from tests run on the recurrent neural network")
+```
+
+This was quite surprising, and is a large improvement over the feed forward network.
+After trying out a CNN, an investigation was done to determine the reason for such
+a large success
 
 ### CNN
 The third test used the same encoder as the neural network and same input size.
@@ -183,8 +252,119 @@ model = tf.keras.models.Sequential([
 ])
 ```
 
+```{r, echo=FALSE, results='asis'}
+cnnresults <- results %>% filter(test=="cnn") %>% arrange(trainpercent)
+kable(filter(cnnresults, numtweets < 13000), caption="Results from tests run on the convolutional neural network")
+```
+#### Results
+The result of this model were similar to the rnn and were unreasonably successful. So successful that it would be worth the rest of the unit investigating as to why it was so successful.
+
+### Determining the reason for CNN and RNN success
+The original hypothesis for the reason of success was the small dataset. With only 12,000 tweets, sequentially taken from the FakeNewsNet dataset, only a handful of topics needed to be remembered by the neural network to determine if it is fake or not.
+
+The hypothesis was that it was remembering words that had to do with particular topics. For instance, anything including "Chicago Shooting" was considered to be true.
+
+#### Method 1, enlarging the dataset
+To test this hypothesis, I first chose to enlarge the dataset. From the FakeNewsNet dataset, I downloaded over 1,049,422 rather than the original 12,222. These tweets were extracted from the gossicop dataset with 5,323 different fake topics (commit 3c1ae3c41b32845243db08cac4ec9a9f7c7a43b3).
+
+#### Results
+```{r, echo=FALSE, results='asis'}
+kable(filter(cnnresults, numtweets > 13000), caption="Results from cnn tests on larger dataset")
+```
+
+The results from the larger dataset were still very impressive for simply remembering topics. I considered more investigation to be neccesary before drawing conclusions.
+
+#### Method 2, removing topics
+The second hypothesis is that the neural network is still remembering topics, but doing so very effectively. To discern this, I seperated out 100 topics to put into the testing set rather than taking out random tweets for the testing set. This got more interesting results
+
+#### Results
+```{r, echo=FALSE, results='asis'}
+kable(filter(cnnresults, split), caption="Results from removing particular topics")
+```
+This confirms the suspision that a large part of the network's success is due
+to recalling particular topics as being fake or real.
+
+### Further investigation into the strategy of the CNN and RNN
+Now that I have found true the hypothesis that the success has to do in a large part remembering topics, I tried to minimize the complexity of the neural networks and determine what factors of the neural networks contributed to the effectiveness in remembering the topics.
+
+I will call these networks SNNs or "Simple Neural Networks"
+
+
+#### Neural Network 1
+Snn
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Embedding(2**15,16,input_length=256),
+  tf.keras.layers.GlobalMaxPooling1D(),
+  tf.keras.layers.Dense(16, activation=tf.nn.relu),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+Dnnsimp
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Embedding(2**15,16,input_length=256),
+  tf.keras.layers.GlobalMaxPooling1D(),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+
+Dnnsimp2
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Embedding(2**15,2,input_length=256),
+  tf.keras.layers.GlobalMaxPooling1D(),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+
+Dnnsimpflat
+```{python, eval=FALSE}
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Embedding(2**15,16,input_length=256),
+  tf.keras.layers.Flatten(),
+  tf.keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
+```
+
+#### Word embeddings
+Research was then done into the effectiveness of word embeddings in this domain of text classification, and if there are particular words that have been learnt to appear more often or true news.
+
+I went about doing this by checking for the behaviour observed
+
+```{r, echo=FALSE}
+wordpoints <- read_csv("wordpoints.csv")
+ggplot(wordpoints,aes(x=x,y=y)) + geom_point()
+```
+
+```{r, echo=FALSE}
+ggplot(wordpoints,aes(x=x,y=y)) + stat_density_2d(geom="raster", aes(fill=stat(density)), contour=FALSE)
+```
+
+```{r, echo=FALSE}
+wordpoints16 <- read_csv("wordpoints16.csv")
+attributes <- select(wordpoints16,-c(name,id))
+corr <- cor(attributes, method="pearson")
+ggcorrplot(corr)
+```
+
+```{r, echo=FALSE, results='asis'}
+wordpoints16rank <- read_csv("wordpoints16rank.csv")
+kable(head(wordpoints16rank, n=20), caption="Most noticed subwords")
+```
+
+```{r, echo=FALSE, results='asis'}
+kable(tail(wordpoints16rank, n=20), caption="Least noticed subwords")
+```
+
+```{r, echo=FALSE}
+wordpoints16corr <- sample_frac(read_csv("wordpoints16corr.csv"), 0.05)
+wordpoints16corr$second = factor(wordpoints16corr$second, levels=c(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0))
+ggplot(wordpoints16corr, aes(x=x,y=y)) + facet_grid(first ~ second)
+```
+
 ## Results
-A summary of results are below
+A summary of results so far are below
 ```{r, results = 'asis'}
 dt <- read_csv("results.csv")
 final <- dt %>% 
